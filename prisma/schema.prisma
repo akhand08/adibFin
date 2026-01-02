@@ -1,14 +1,124 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================
+// ENUMS
+// =====================
+
+enum TransactionType {
+  EXPENSE
+  INCOME
+}
+
+enum ProjectStatus {
+  OPEN
+  CLOSED
+}
+
+enum FlowType {
+  INVEST_PRINCIPAL
+  RETURN_OF_CAPITAL
+  PROFIT
+  LOSS
+}
+
+// =====================
+// MODELS
+// =====================
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  categories         Category[]
+  transactions       Transaction[]
+  investmentProjects InvestmentProject[]
+
+  @@map("users")
+}
+
+model Category {
+  id        String          @id @default(cuid())
+  userId    String?         // Nullable for system categories
+  name      String
+  type      TransactionType
+  isSystem  Boolean         @default(false)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  // Relations
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@map("categories")
+}
+
+model Transaction {
+  id                  String          @id @default(cuid())
+  userId              String
+  date                DateTime        @default(now())
+  type                TransactionType
+  categoryId          String
+  amount              Float           // Always positive
+  investmentProjectId String?         // Nullable
+  note                String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  // Relations
+  user              User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category          Category              @relation(fields: [categoryId], references: [id])
+  investmentProject InvestmentProject?    @relation(fields: [investmentProjectId], references: [id])
+  cashflow          InvestmentCashflow?
+
+  @@map("transactions")
+}
+
+model InvestmentProject {
+  id          String        @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  startDate   DateTime      @default(now())
+  status      ProjectStatus @default(OPEN)
+  closedDate  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  cashflows    InvestmentCashflow[]
+
+  @@map("investment_projects")
+}
+
+model InvestmentCashflow {
+  id            String   @id @default(cuid())
+  projectId     String
+  transactionId String   @unique
+  flowType      FlowType
+  amount        Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  project     InvestmentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  transaction Transaction       @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@map("investment_cashflows")
 }
