@@ -72,14 +72,11 @@ export async function createTransaction(
 ) {
   const { categoryId, ...rest } = data
 
-  // Verify category exists and belongs to user or is system
+  // Verify category exists and belongs to user
   const category = await prisma.category.findFirst({
     where: {
       id: categoryId,
-      OR: [
-        { userId },
-        { isSystem: true },
-      ],
+      userId,
     },
   })
 
@@ -139,10 +136,7 @@ export async function updateTransaction(
     const category = await prisma.category.findFirst({
       where: {
         id: data.categoryId,
-        OR: [
-          { userId },
-          { isSystem: true },
-        ],
+        userId,
       },
     })
 

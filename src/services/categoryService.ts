@@ -2,12 +2,7 @@ import { prisma } from "@/lib/db"
 import { TransactionType } from "@prisma/client"
 
 export async function getCategoriesByUser(userId: string, type?: TransactionType) {
-  const where: any = {
-    OR: [
-      { userId },
-      { isSystem: true },
-    ],
-  }
+  const where: any = { userId }
 
   if (type) {
     where.type = type
@@ -15,10 +10,9 @@ export async function getCategoriesByUser(userId: string, type?: TransactionType
 
   return await prisma.category.findMany({
     where,
-    orderBy: [
-      { isSystem: "desc" },
-      { name: "asc" },
-    ],
+    orderBy: {
+      name: "asc",
+    },
   })
 }
 
@@ -42,10 +36,6 @@ export async function deleteCategory(categoryId: string, userId: string) {
 
   if (!category) {
     throw new Error("Category not found")
-  }
-
-  if (category.isSystem) {
-    throw new Error("Cannot delete system category")
   }
 
   const transactionCount = await prisma.transaction.count({

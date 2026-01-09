@@ -73,14 +73,11 @@ export async function createInvestment(
 ) {
   const { amount, categoryId, startDate, ...projectData } = data
 
-  // Verify category exists
+  // Verify category exists and belongs to user
   const category = await prisma.category.findFirst({
     where: {
       id: categoryId,
-      OR: [
-        { userId },
-        { isSystem: true },
-      ],
+      userId,
     },
   })
 
@@ -187,14 +184,11 @@ export async function addReturn(
     )
   }
 
-  // Verify category
+  // Verify category exists and belongs to user
   const category = await prisma.category.findFirst({
     where: {
       id: categoryId,
-      OR: [
-        { userId },
-        { isSystem: true },
-      ],
+      userId,
     },
   })
 
