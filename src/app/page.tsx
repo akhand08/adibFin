@@ -1,6 +1,15 @@
 import Link from "next/link"
+import { auth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth()
+
+  // Redirect to dashboard if already logged in
+  if (session) {
+    redirect("/dashboard")
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center px-4">
       <div className="max-w-4xl w-full text-center space-y-8">
@@ -56,11 +65,11 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Login Button */}
+        {/* Login Button - Touch-friendly */}
         <div className="pt-8">
           <Link
             href="/login"
-            className="inline-block px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+            className="inline-block px-8 py-4 min-h-[44px] text-base font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
           >
             Login
           </Link>

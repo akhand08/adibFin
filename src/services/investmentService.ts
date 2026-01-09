@@ -148,7 +148,7 @@ export async function addReturn(
   userId: string,
   data: AddReturnInput
 ) {
-  const { capitalReturned, profit, categoryId, date } = data
+  const { totalReturned, categoryId, date } = data
 
   // Verify investment exists and is OPEN
   const investment = await prisma.investmentProject.findFirst({
@@ -166,21 +166,24 @@ export async function addReturn(
     throw new Error("Cannot add return to closed investment")
   }
 
-  // Calculate total invested and total returned
+  // Calculate total invested and already returned capital
   const totalInvested = investment.cashflows
     .filter((cf) => cf.flowType === FlowType.INVEST_PRINCIPAL)
     .reduce((sum, cf) => sum + cf.amount, 0)
 
-  const totalReturned = investment.cashflows
+  const alreadyReturnedCapital = investment.cashflows
     .filter((cf) => cf.flowType === FlowType.RETURN_OF_CAPITAL)
     .reduce((sum, cf) => sum + cf.amount, 0)
 
-  const newTotalReturned = totalReturned + capitalReturned
+  // Calculate capital and profit/loss
+  const remainingCapital = totalInvested - alreadyReturnedCapital
+  const capitalReturned = Math.min(totalReturned, remainingCapital)
+  const profitOrLoss = totalReturned - capitalReturned
 
-  // Check if return exceeds investment
-  if (newTotalReturned > totalInvested) {
+  // Check if return exceeds expected total
+  if (capitalReturned > remainingCapital) {
     throw new Error(
-      `Cannot return more capital than invested. Total invested: ${totalInvested}, Already returned: ${totalReturned}, Attempting to return: ${capitalReturned}`
+      `Invalid return amount. Total invested: ${totalInvested}, Already returned: ${alreadyReturnedCapital}, Remaining: ${remainingCapital}`
     )
   }
 
@@ -197,13 +200,11 @@ export async function addReturn(
   }
 
   const returnDate = date ? new Date(date) : new Date()
-  const shouldClose = newTotalReturned === totalInvested
+  const shouldClose = alreadyReturnedCapital + capitalReturned === totalInvested
 
   // Create return transactions and cashflows
   return await prisma.$transaction(async (tx) => {
-    const transactions = []
-
-    // Create transaction for capital return if > 0
+    // Create transaction for capital return
     if (capitalReturned > 0) {
       const capitalTransaction = await tx.transaction.create({
         data: {
@@ -225,34 +226,32 @@ export async function addReturn(
           amount: capitalReturned,
         },
       })
-
-      transactions.push(capitalTransaction)
     }
 
-    // Create transaction for profit if > 0
-    if (profit > 0) {
-      const profitTransaction = await tx.transaction.create({
+    // Create transaction for profit or loss
+    if (profitOrLoss !== 0) {
+      const profitLossTransaction = await tx.transaction.create({
         data: {
           userId,
           date: returnDate,
           type: TransactionType.INCOME,
           categoryId,
-          amount: profit,
+          amount: Math.abs(profitOrLoss),
           investmentProjectId: investmentId,
-          note: `Profit from ${investment.name}`,
+          note: profitOrLoss > 0
+            ? `Profit from ${investment.name}`
+            : `Loss from ${investment.name}`,
         },
       })
 
       await tx.investmentCashflow.create({
         data: {
           projectId: investmentId,
-          transactionId: profitTransaction.id,
-          flowType: FlowType.PROFIT,
-          amount: profit,
+          transactionId: profitLossTransaction.id,
+          flowType: profitOrLoss > 0 ? FlowType.PROFIT : FlowType.LOSS,
+          amount: Math.abs(profitOrLoss),
         },
       })
-
-      transactions.push(profitTransaction)
     }
 
     // Close project if all capital returned

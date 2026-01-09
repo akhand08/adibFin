@@ -60,8 +60,7 @@ export const createInvestmentSchema = z.object({
 })
 
 export const addReturnSchema = z.object({
-  capitalReturned: z.number().min(0, "Capital returned cannot be negative"),
-  profit: z.number().min(0, "Profit cannot be negative"),
+  totalReturned: z.number().positive("Total returned must be positive"),
   categoryId: z.string().min(1, "Category is required"),
   date: z.string().or(z.date()).optional(),
 })
