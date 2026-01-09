@@ -6,16 +6,6 @@ export async function POST(request: Request) {
   try {
     const { name, email, password } = await request.json()
 
-    // Check if any user already exists
-    const existingUserCount = await prisma.user.count()
-
-    if (existingUserCount > 0) {
-      return NextResponse.json(
-        { error: "Signup is disabled. A user already exists." },
-        { status: 403 }
-      )
-    }
-
     // Validate input
     if (!name || !email || !password) {
       return NextResponse.json(
