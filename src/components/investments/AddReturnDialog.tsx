@@ -113,7 +113,7 @@ export function AddReturnDialog({
           <DialogHeader>
             <DialogTitle>Add Return</DialogTitle>
             <DialogDescription>
-              Record total amount returned from {investmentName}. We'll automatically calculate capital and profit/loss.
+              Record total amount returned from {investmentName}. We&apos;ll automatically calculate capital and profit/loss.
             </DialogDescription>
           </DialogHeader>
 

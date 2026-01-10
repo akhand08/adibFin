@@ -11,7 +11,7 @@ export default async function ReportsPage() {
   }
 
   return (
-    <DashboardLayout userName={session.user?.name}>
+    <DashboardLayout userName={session.user?.name ?? undefined}>
       <div className="space-y-6">
         {/* Header */}
         <div>

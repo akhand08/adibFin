@@ -12,7 +12,7 @@ export default async function NewInvestmentPage() {
   }
 
   return (
-    <DashboardLayout userName={session.user?.name}>
+    <DashboardLayout userName={session.user?.name ?? undefined}>
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div>

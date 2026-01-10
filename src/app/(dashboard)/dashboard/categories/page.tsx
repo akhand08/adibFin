@@ -12,7 +12,7 @@ export default async function CategoriesPage() {
   }
 
   return (
-    <DashboardLayout userName={session.user?.name}>
+    <DashboardLayout userName={session.user?.name ?? undefined}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
